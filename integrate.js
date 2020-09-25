@@ -58,16 +58,50 @@
 
   // Extract data from the web page
   WebApp.update = function () {
+    var elms = this._getElements()
+    var [currentTime, totalTime] = this._getTrackTime()
+
     var track = {
-      title: null,
-      artist: null,
+      title: Nuvola.queryText('#currently-playing-work'),
+      artist: Nuvola.queryText('#currently-playing-composer'),
       album: null,
-      artLocation: null,
-      rating: null
+      artLocation: Nuvola.queryAttribute('#currently-playing-album-cover img', 'src'),
+      rating: null,
+      length: totalTime
     }
 
+    var state
+    if (!track.title && !track.artist) {
+      state = PlaybackState.UNKNOWN
+    } else if (elms.pause) {
+      state = PlaybackState.PLAYING
+    } else if (elms.play) {
+      state = PlaybackState.PAUSED
+    } else {
+      state = PlaybackState.UNKNOWN
+    }
+
+    player.setPlaybackState(state)
     player.setTrack(track)
-    player.setPlaybackState(PlaybackState.UNKNOWN)
+    player.setTrackPosition(currentTime)
+
+    var volumeMark = elms.volumebar ? elms.volumebar.firstElementChild : null
+    if (volumeMark && volumeMark.style.width.includes('%')) {
+      player.updateVolume(volumeMark.style.width.replace('%', '') / 100)
+    }
+    player.setCanChangeVolume(false)
+    player.setCanSeek(false)
+
+    player.setCanGoPrev(!!elms.prev)
+    player.setCanGoNext(!!elms.next)
+    player.setCanPlay(!!elms.play)
+    player.setCanPause(!!elms.pause)
+
+    player.setCanShuffle(!!elms.shuffle)
+    player.setShuffleState(elms.shuffle ? elms.shuffle.parentNode.childNodes[2] === elms.shuffle : null)
+
+    player.setCanRepeat(!!elms.repeat)
+    player.setRepeatState(this._getRepeatState(elms))
 
     // Schedule the next update
     setTimeout(this.update.bind(this), 500)
@@ -75,9 +109,99 @@
 
   // Handler of playback actions
   WebApp._onActionActivated = function (emitter, name, param) {
+    var elms = this._getElements()
     switch (name) {
-      case PlayerAction.Play:
+      case PlayerAction.TOGGLE_PLAY:
+        if (elms.play) {
+          Nuvola.clickOnElement(elms.play)
+        } else {
+          Nuvola.clickOnElement(elms.pause)
+        }
         break
+      case PlayerAction.PLAY:
+        Nuvola.clickOnElement(elms.play)
+        break
+      case PlayerAction.PAUSE:
+      case PlayerAction.STOP:
+        Nuvola.clickOnElement(elms.pause)
+        break
+      case PlayerAction.PREV_SONG:
+        Nuvola.clickOnElement(elms.prev)
+        break
+      case PlayerAction.NEXT_SONG:
+        Nuvola.clickOnElement(elms.next)
+        break
+      case PlayerAction.SHUFFLE:
+        Nuvola.clickOnElement(elms.shuffle)
+        break
+      case PlayerAction.REPEAT:
+        this._setRepeatState(elms, param)
+        break
+    }
+  }
+
+  WebApp._getElements = function () {
+    // Interesting elements
+    var elms = {
+      play: document.querySelector('footer.audioPlayer button#player-play-pause'),
+      pause: null,
+      next: document.querySelector('footer.audioPlayer button#player-next'),
+      prev: document.querySelector('footer.audioPlayer button#player-prev'),
+      repeat: document.querySelector('footer.audioPlayer button#player-repeat'),
+      shuffle: document.querySelector('footer.audioPlayer button#player-shuffle'),
+      progressbar: document.querySelector('footer.audioPlayer .progress-bar'),
+      volumebar: document.querySelector('footer.audioPlayer .volume-bar')
+    }
+
+    // Ignore disabled buttons
+    for (var key in elms) {
+      if (elms[key] && elms[key].disabled) {
+        elms[key] = null
+      }
+    }
+
+    // Distinguish between play and pause action
+    if (elms.play && elms.play.firstChild === elms.play.firstElementChild) {
+      elms.pause = elms.play
+      elms.play = null
+    }
+    return elms
+  }
+
+  WebApp._getTrackTime = function () {
+    var current = Nuvola.queryText('footer.audioPlayer .progress span')
+    var total = Nuvola.queryText('footer.audioPlayer .progress span#toggle-remainging span')
+    if (!current || !total) {
+      return [null, null]
+    }
+    current = Nuvola.parseTimeUsec(current)
+    total = total.startsWith('-') ? current + Nuvola.parseTimeUsec(total.substr(1)) : Nuvola.parseTimeUsec(total)
+    return [current, total]
+  }
+
+  WebApp._getRepeatState = function (elms) {
+    var elm = elms.repeat
+    if (!elm) {
+      return null
+    }
+
+    var nodes = elm.parentNode.childNodes
+    if (nodes[3] === elm) {
+      return Nuvola.PlayerRepeat.NONE
+    }
+    if (nodes[4] === elm) {
+      return Nuvola.PlayerRepeat.PLAYLIST
+    }
+    if (nodes[5] === elm) {
+      return Nuvola.PlayerRepeat.TRACK
+    }
+    return null
+  }
+
+  WebApp._setRepeatState = function (elms, repeat) {
+    if (this._getRepeatState(elms) !== repeat) {
+      Nuvola.clickOnElement(elms.repeat)
+      window.setTimeout(() => this._setRepeatState(elms, repeat), 10)
     }
   }
 
