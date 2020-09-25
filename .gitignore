@@ -1,0 +1,13 @@
+Makefile
+metadata.json
+icons
+/screenshots/
+nuvola-app-primephonic
+eu.tiliado.NuvolaAppPrimephonic.desktop
+eu.tiliado.NuvolaAppPrimephonic.service
+eu.tiliado.NuvolaAppPrimephonic.appdata.xml
+nuvola-app-primephonic.metainfo.xml
+eu.tiliado.WebRuntimeAppPrimephonic.desktop
+eu.tiliado.WebRuntimeAppPrimephonic.service
+eu.tiliado.WebRuntimeAppPrimephonic.appdata.xml
+nuvola-app-primephonic.metainfo.xml
