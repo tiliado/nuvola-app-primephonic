@@ -26,20 +26,20 @@
 
 (function (Nuvola) {
   // Create media player component
-  var player = Nuvola.$object(Nuvola.MediaPlayer)
+  const player = Nuvola.$object(Nuvola.MediaPlayer)
 
   // Handy aliases
-  var PlaybackState = Nuvola.PlaybackState
-  var PlayerAction = Nuvola.PlayerAction
+  const PlaybackState = Nuvola.PlaybackState
+  const PlayerAction = Nuvola.PlayerAction
 
   // Create new WebApp prototype
-  var WebApp = Nuvola.$WebApp()
+  const WebApp = Nuvola.$WebApp()
 
   // Initialization routines
   WebApp._onInitWebWorker = function (emitter) {
     Nuvola.WebApp._onInitWebWorker.call(this, emitter)
 
-    var state = document.readyState
+    const state = document.readyState
     if (state === 'interactive' || state === 'complete') {
       this._onPageReady()
     } else {
@@ -58,10 +58,10 @@
 
   // Extract data from the web page
   WebApp.update = function () {
-    var elms = this._getElements()
-    var [currentTime, totalTime] = this._getTrackTime()
+    const elms = this._getElements()
+    const [currentTime, totalTime] = this._getTrackTime()
 
-    var track = {
+    const track = {
       title: Nuvola.queryText('#currently-playing-work'),
       artist: Nuvola.queryText('#currently-playing-composer'),
       album: null,
@@ -70,7 +70,7 @@
       length: totalTime
     }
 
-    var state
+    let state
     if (!track.title && !track.artist) {
       state = PlaybackState.UNKNOWN
     } else if (elms.pause) {
@@ -85,7 +85,7 @@
     player.setTrack(track)
     player.setTrackPosition(currentTime)
 
-    var volumeMark = elms.volumebar ? elms.volumebar.firstElementChild : null
+    const volumeMark = elms.volumebar ? elms.volumebar.firstElementChild : null
     if (volumeMark && volumeMark.style.width.includes('%')) {
       player.updateVolume(volumeMark.style.width.replace('%', '') / 100)
     }
@@ -109,7 +109,7 @@
 
   // Handler of playback actions
   WebApp._onActionActivated = function (emitter, name, param) {
-    var elms = this._getElements()
+    const elms = this._getElements()
     switch (name) {
       case PlayerAction.TOGGLE_PLAY:
         if (elms.play) {
@@ -142,7 +142,7 @@
 
   WebApp._getElements = function () {
     // Interesting elements
-    var elms = {
+    const elms = {
       play: document.querySelector('footer.audioPlayer button#player-play-pause'),
       pause: null,
       next: document.querySelector('footer.audioPlayer button#player-next'),
@@ -154,7 +154,7 @@
     }
 
     // Ignore disabled buttons
-    for (var key in elms) {
+    for (const key in elms) {
       if (elms[key] && elms[key].disabled) {
         elms[key] = null
       }
@@ -169,8 +169,8 @@
   }
 
   WebApp._getTrackTime = function () {
-    var current = Nuvola.queryText('footer.audioPlayer .progress span')
-    var total = Nuvola.queryText('footer.audioPlayer .progress span#toggle-remainging span')
+    let current = Nuvola.queryText('footer.audioPlayer .progress span')
+    let total = Nuvola.queryText('footer.audioPlayer .progress span#toggle-remainging span')
     if (!current || !total) {
       return [null, null]
     }
@@ -180,12 +180,12 @@
   }
 
   WebApp._getRepeatState = function (elms) {
-    var elm = elms.repeat
+    const elm = elms.repeat
     if (!elm) {
       return null
     }
 
-    var nodes = elm.parentNode.childNodes
+    const nodes = elm.parentNode.childNodes
     if (nodes[3] === elm) {
       return Nuvola.PlayerRepeat.NONE
     }
