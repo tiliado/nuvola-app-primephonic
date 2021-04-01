@@ -62,10 +62,10 @@
     const [currentTime, totalTime] = this._getTrackTime()
 
     const track = {
-      title: Nuvola.queryText('#currently-playing-work'),
-      artist: Nuvola.queryText('#currently-playing-composer'),
+      title: Nuvola.queryText('footer.player-wrapper .work'),
+      artist: Nuvola.queryText('footer.player-wrapper .composer'),
       album: null,
-      artLocation: Nuvola.queryAttribute('#currently-playing-album-cover img', 'src'),
+      artLocation: Nuvola.queryAttribute('#header-image img', 'src'),
       rating: null,
       length: totalTime
     }
@@ -98,7 +98,7 @@
     player.setCanPause(!!elms.pause)
 
     player.setCanShuffle(!!elms.shuffle)
-    player.setShuffleState(elms.shuffle ? elms.shuffle.parentNode.childNodes[2] === elms.shuffle : null)
+    player.setShuffleState(elms.shuffle ? !!elms.shuffleOn : null)
 
     player.setCanRepeat(!!elms.repeat)
     player.setRepeatState(this._getRepeatState(elms))
@@ -141,17 +141,26 @@
   }
 
   WebApp._getElements = function () {
-    // Interesting elements
+    const HTMLButtonElement = window.HTMLButtonElement
+    let actions = document.querySelector('footer.player-wrapper .playing-controls-actions')
+    actions = actions ? actions.childNodes : []
+
     const elms = {
-      play: document.querySelector('footer.audioPlayer button#player-play-pause'),
+      play: actions[3] instanceof HTMLButtonElement ? actions[3] : null,
       pause: null,
-      next: document.querySelector('footer.audioPlayer button#player-next'),
-      prev: document.querySelector('footer.audioPlayer button#player-prev'),
-      repeat: document.querySelector('footer.audioPlayer button#player-repeat'),
-      shuffle: document.querySelector('footer.audioPlayer button#player-shuffle'),
-      progressbar: document.querySelector('footer.audioPlayer .progress-bar'),
-      volumebar: document.querySelector('footer.audioPlayer .volume-bar')
+      next: actions[4] instanceof HTMLButtonElement ? actions[4] : null,
+      prev: actions[2] instanceof HTMLButtonElement ? actions[2] : null,
+      repeatNone: actions[5] instanceof HTMLButtonElement ? actions[5] : null,
+      repeatAll: actions[6] instanceof HTMLButtonElement ? actions[6] : null,
+      repeatOne: actions[7] instanceof HTMLButtonElement ? actions[7] : null,
+      shuffleOff: actions[0] instanceof HTMLButtonElement ? actions[0] : null,
+      shuffleOn: actions[1] instanceof HTMLButtonElement ? actions[1] : null,
+      progressbar: document.querySelector('footer.player-wrapper .progress-bar'),
+      volumebar: document.querySelector('footer.player-wrapper .volume-bar')
     }
+
+    elms.shuffle = elms.shuffleOff || elms.shuffleOn
+    elms.repeat = elms.repeatAll || elms.repeatOne || elms.repeatNone
 
     // Ignore disabled buttons
     for (const key in elms) {
@@ -169,8 +178,8 @@
   }
 
   WebApp._getTrackTime = function () {
-    let current = Nuvola.queryText('footer.audioPlayer .progress span')
-    let total = Nuvola.queryText('footer.audioPlayer .progress span#toggle-remainging span')
+    let current = Nuvola.queryText('footer.player-wrapper .progress span')
+    let total = Nuvola.queryText('footer.player-wrapper .progress span#toggle-remainging span')
     if (!current || !total) {
       return [null, null]
     }
@@ -185,14 +194,13 @@
       return null
     }
 
-    const nodes = elm.parentNode.childNodes
-    if (nodes[3] === elm) {
+    if (elm === elms.repeatNone) {
       return Nuvola.PlayerRepeat.NONE
     }
-    if (nodes[4] === elm) {
+    if (elm === elms.repeatAll) {
       return Nuvola.PlayerRepeat.PLAYLIST
     }
-    if (nodes[5] === elm) {
+    if (elm === elms.repeatOne) {
       return Nuvola.PlayerRepeat.TRACK
     }
     return null
@@ -201,7 +209,7 @@
   WebApp._setRepeatState = function (elms, repeat) {
     if (this._getRepeatState(elms) !== repeat) {
       Nuvola.clickOnElement(elms.repeat)
-      window.setTimeout(() => this._setRepeatState(elms, repeat), 10)
+      window.setTimeout(() => this._setRepeatState(this._getElements(), repeat), 100)
     }
   }
 
