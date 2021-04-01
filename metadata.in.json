@@ -10,6 +10,7 @@
   "api_minor": 16,
   "categories": "AudioVideo;Audio;",
   "requirements": "Chromium[65] Feature[widevine]",
+  "user_agent": "SAFARI",
   "license": "BSD-2-Clause; CC-BY-SA-3.0",
   "build": {
     "icons": [
